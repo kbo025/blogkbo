@@ -1,0 +1,15 @@
+<h1 class="text-muted">
+  <%= @article.title %>
+</h1>
+ 
+<p  class="lead" >
+  <%= @article.text %>
+</p>
+<ln/>
+<h3 class="text-muted">Comentarios</h3>
+<%= render @article.comments %>
+<ln/>
+<h3 class="text-muted">Agregar Comentario:</h3>
+<%= render "comments/form" %>
+
+<%= link_to 'Back', articles_path %> | <%= link_to 'Edit', edit_article_path(@article) %>

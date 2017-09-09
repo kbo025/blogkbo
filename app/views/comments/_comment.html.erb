@@ -1,0 +1,9 @@
+<div class="row panel panel-default">
+  <div class="panel-budy col-sm-2"><p class="lead"><%= comment.commenter %></p></div>
+  <div class="panel-budy col-sm-4"><p class="lead"><%= comment.body %></p></div>
+  <div class="panel-budy col-sm-2"><p>
+    <%= link_to raw('<span class="glyphicon glyphicon-trash"></span>'), [comment.article, comment],
+                method: :delete,
+                data: { confirm: 'Are you sure?' } %>
+  </p></div>
+</div>

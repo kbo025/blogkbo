@@ -1,0 +1,28 @@
+<div class="header">
+  <h1 class="text-muted">Articulos</h1>
+  <div>
+    <%= link_to 'Nuevo', new_article_path, {:class => "btn btn-lg btn-success"} %>
+  </div>
+</div>
+<br>
+
+<div>
+  <div class="row panel panel-primary">
+    <div class="clearfix panel-heading">
+      <div class="col-sm-6" >Titulo</div>
+      <div class="col-sm-6" ></div>
+    </div>
+  </div>
+ 
+<% @articles.each do |article| %>
+  <div class="row panel panel-default">
+    <div class="panel-body col-sm-6" ><%= article.title %></div>
+    <div class="panel-body col-sm-6" >
+      <%= link_to raw('<span class="glyphicon glyphicon-trash"></span>'), article_path(article), :style => 'float:right;',
+                    method: :delete, data: { confirm: 'Are you sure?' } %>
+      <%= link_to raw('<span class="glyphicon glyphicon-pencil"></span>'), edit_article_path(article), {:style => 'float:right;'} %>
+      <%= link_to raw('<span class="glyphicon glyphicon-eye-open"></span>'), article_path(article), :style => 'float:right;' %>
+    </div>
+  </div>
+<% end %>
+</div>
