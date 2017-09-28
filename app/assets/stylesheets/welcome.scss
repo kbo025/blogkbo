@@ -1,3 +1,35 @@
 // Place all the styles related to the welcome controller here.
 // They will automatically be included in application.css.
 // You can use Sass (SCSS) here: http://sass-lang.com/
+input.form-control, textarea.form-control {
+    border-radius: 0 !important;
+}
+
+input.form-control:focus,textarea.form-control:focus {
+    box-shadow: none !important;;
+    background: rgba(0,0,0,0.05) !important;;
+    border: #ccc !important;;
+}
+
+button.btn {
+    width: 100%;
+    border-radius: 0;
+}
+
+.menu-icons {
+    float: right;
+    padding: 5px;
+    border-bottom: 1px solid #ddd;
+    border-left: 1px solid #ddd;
+    color: #AEAEAE;
+    background: #f5f5f5;
+}
+
+.icon {
+    cursor: pointer;
+}
+
+.panel-article {
+    border-radius: 0 !important;
+    margin-bottom: 0 !important;
+}

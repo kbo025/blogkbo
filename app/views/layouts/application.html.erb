@@ -1,20 +1,437 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html>
   <head>
     <title>Blogkbo</title>
-    <%= csrf_meta_tags %>
-
     <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track': 'reload' %>
     <%= javascript_include_tag 'application', 'data-turbolinks-track': 'reload' %>
+    <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.css"/>
   </head>
 
   <body>
-
-    <div class="container">
-      <div class="jumbotron">
-        <%= yield %>
+    <div id="app">
+      <div class="container">
+        <div style="min-height: 50px;"></div>
+        <nav class="navbar navbar-default navbar-fixed-top">
+          <div class="container">
+            <div class="navbar-header">
+              <button 
+                type="button"
+                class="navbar-toggle collapsed"
+                data-toggle="collapse"
+                data-target="#navbar"
+                aria-expanded="false"
+                aria-controls="navbar">
+                  <span class="sr-only">Toggle navigation</span>
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>
+              </button>
+              <a class="navbar-brand" @click.stop.prevent="changeMode(0)" href="">Blog Kbo</a>
+            </div>
+            <div id="navbar" class="navbar-collapse collapse">
+              <ul class="nav navbar-nav navbar-right">
+                <li v-show="!isLogin"><a @click.stop.prevent="changeMode(4)" href="">Register</a></li>
+                <li v-show="!isLogin"><a @click.stop.prevent="changeMode(3)" href="">Login</a></li>
+                <li v-show="isLogin"><a @click.stop.prevent="logout" href="">Logout</a></li>
+              </ul>
+            </div><!--/.nav-collapse -->
+          </div>
+        </nav>
+        <div class="row">
+          <div class="col-md-6 col-md-offset-3">
+            <!--modo lista-->
+            <div v-show="mode==0">
+              <div class="header">
+                <div class="row">
+                  <div class="col-sm-6"><h1 class="text-muted">Articulos</h1></div>
+                  <div class="col-sm-3 col-sm-offset-3">
+                    <button 
+                      style = "margin-top: 20px; float:right;"
+                      v-if = "isLogin"
+                      @click="changeMode(1)"
+                      type="button"
+                      class="btn btn-primary"
+                      @click="addComment(item)">
+                        <span class="glyphicon glyphicon-plus"></span>Agregar
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <template v-for="item in list">
+                <div class="panel-article panel panel-default">
+                  <div class="panel-heading">
+                    <div class="row">
+                      <div class="col-sm-6" ><h4 class="text-muted">{{ item.title }}</h4></div>
+                      <div class="col-sm-6" >
+                        <h4 class="text-muted">
+                        <span 
+                          v-b-toggle="'collapse' + item.id"
+                          class="icon glyphicon glyphicon-menu-down"
+                          v-show="!item.isExpand"
+                          style="float:right;"
+                          @click="item.isExpand = !item.isExpand">
+                        </span>
+                        <span 
+                          v-b-toggle="'collapse' + item.id"
+                          class="icon glyphicon glyphicon-menu-up"
+                          v-show="item.isExpand"
+                          style="float:right;"
+                          @click="item.isExpand = !item.isExpand">
+                        </span>
+                        </h4>
+                      </div>
+                    </div>              
+                  </div>
+                  <b-collapse v-bind:id="'collapse' + item.id" accordion="my-accordion">
+                    <div class="menu-icons" v-if = "item.user_id === user.id ">
+                      <span class="icon glyphicon glyphicon-trash" @click="deleteArticle(item)"></span>
+                      <span class="icon glyphicon glyphicon-pencil" @click="editItem(item)" ></span>
+                    </div>
+                    <div class="panel-body">
+                      <div class="row">
+                        <div class="col-sm-12">
+                          {{ item.text }}
+                        </div>
+                      </div>
+                      <hr/>
+                      <h4 class="text-muted">Comentarios</h4>
+                      <br/>
+                      <template v-for="comment in item.comments">
+                        <div class="row">
+                          <div class="col-sm-4"><strong>{{ comment.commenter + ': '}}</strong></div>
+                          <div class="col-sm-5"><p>{{ comment.body }}</p></div>
+                          <div class="col-sm-1">
+                            <span
+                              v-show="item.user_id === user.id"
+                              class="icon glyphicon glyphicon-trash"
+                              @click="deleteComment(comment,item)">
+                            </span>
+                          </div>
+                        </div>
+                      </template>
+                      <div v-if="isLogin">
+                        <hr/>
+                        <div class="row">
+                          <div class="col-sm-6">
+                            <template v-for="item in commentForm.errors">
+                              <div class="alert alert-danger" role="alert">{{ item }}</div>
+                            </template>
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-sm-6">
+                            <textarea 
+                              class="form-control"
+                              v-model="commentForm.body"
+                              placeholder="Comentario">
+                            </textarea>
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-sm-6">
+                            <button type="button" class="btn btn-success" @click="addComment(item)">Agregar</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </b-collapse>
+                </div>
+              </template>
+            </div>
+            <!--modo formulario de crear/editar articulos-->
+            <div v-show="mode==1 || mode==2">
+              <h1 class="text-muted">
+                <span v-show="mode==1">Crear</span>
+                <span v-show="mode==2">Editar</span>
+                Articulo 
+                <span v-show="mode==2">{{ selected.title }}</span>
+              </h1>
+              <div class="row">
+                <template v-for="item in selected.errors">
+                  <div class="alert alert-danger" role="alert">{{ item }}</div>
+                </template>
+              </div>
+              <div class="input-group-lg">
+                <input type="text" class="form-control" placeholder="Titulo" v-model="selected.title">
+                <textarea class="form-control" placeholder="Contenido" v-model="selected.text"></textarea>
+              </div>
+              <div class="row">
+                <div class="col-sm-6" style="padding-right:0;">
+                  <button type="button" class="btn btn-success" @click="addArticle">Agregar</button>
+                </div>
+                <div class="col-sm-6" style="padding-left:0;">
+                  <button type="button" class="btn btn-danger" @click="clearForm">Cancelar</button>
+                </div>
+              </div>
+            </div>
+            <!--modo formulario de login-->
+            <div v-show="mode==3">
+              <div class="header">
+                <h1 class="text-muted">Iniciar</h1>
+              </div>
+              <div>
+                <div class="row">
+                  <template v-for="item in loginForm.errors">
+                    <div class="alert alert-danger" role="alert">{{ item }}</div>
+                  </template>
+                </div>
+                <div class="input-group-lg">
+                  <input type="email" class="form-control" placeholder="Email" v-model="loginForm.email">
+                  <input type="password" class="form-control" placeholder="Password" v-model="loginForm.password">
+                </div>
+                <div class="row">
+                  <div class="col-sm-6" style="padding-right:0;">
+                    <button type="button" class="btn btn-success" @click="login">Iniciar</button>
+                  </div>
+                  <div class="col-sm-6" style="padding-left:0;">
+                    <button type="button" class="btn btn-danger" @click="cancelLogin">Cancelar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!--modo formulario de registro-->
+            <div v-show="mode==4">
+              <div class="header">
+                <h1 class="text-muted">Registrate</h1>
+              </div>
+              <div>
+                <div class="row">
+                  <template v-for="item in registerForm.errors">
+                    <div class="alert alert-danger" role="alert">{{ item }}</div>
+                  </template>
+                </div>
+                <div class="input-group-lg">
+                  <input type="email" class="form-control" placeholder="Email" v-model="registerForm.email">
+                  <input type="text" class="form-control" placeholder="Nombre" v-model="registerForm.nombre">
+                  <input type="password" class="form-control" placeholder="Password" v-model="registerForm.password">
+                  <input type="password" class="form-control" placeholder="Confirmar Password" v-model="registerForm.confPassword">
+                </div>
+                <div class="row">
+                  <div class="col-sm-6" style="padding-right:0;">
+                    <button type="button" class="btn btn-success" @click="register">Registrar</button>
+                  </div>
+                  <div class="col-sm-6"style="padding-left:0;">
+                    <button type="button" class="btn btn-danger" @click="cancelRegister">Cancelar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pubsub-js/1.5.7/pubsub.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-deparam@0.5.3/jquery-deparam.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/j-toker@0.0.10-beta3/dist/jquery.j-toker.min.js"></script>
 
+    <script src="https://unpkg.com/vue"></script>
+    <script src="//unpkg.com/babel-polyfill@latest/dist/polyfill.min.js"></script>
+    <script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.js"></script>
+    <script type="text/javascript">
+      var domain = 'http://localhost:3000'; 
+      $.auth.configure({
+        apiUrl: domain
+      });
+      let app = new Vue({
+        el: '#app',
+        data: {
+          selected: {
+            errors: []
+          },
+          loginForm: {
+            errors: []
+          },
+          registerForm: {
+            errors: []
+          },
+          commentForm: {
+            errors: []
+          },
+          cancelForm: {},
+          isLogin: false,
+          user: {},
+          token: '',
+          mode: 0,
+          name: '',
+          names: [],
+          list: []
+        },
+        methods: {
+          login: function() {
+            var app = this;
+            $.auth.emailSignIn(this.loginForm)
+            .then(function(resp) {
+              app.user = resp.data;
+              app.mode = 0;
+              app.isLogin = true;
+            }.bind(this))
+            .fail(function(resp) {
+              app.loginForm.errors = resp.data.errors;
+            }.bind(this));
+          },
+          cancelLogin: function() {
+            this.loginForm = {
+              errors: []
+            };
+            this.mode = 0;
+          },
+          register: function() {
+            var app = this;
+            $.auth.emailSignUp({
+              email: app.registerForm.email,
+              name: app.registerForm.nombre,
+              password: app.registerForm.password,
+              password_confirmation:  app.registerForm.confPassword,
+            })
+            .then(function(resp) {
+              app.user = resp.data;
+              this.isLogin = true;
+              this.mode = 0;
+            }.bind(this))
+            .fail(function(resp) {
+              app.registerForm.errors = resp.data.errors.full_messages;
+            }.bind(this));
+          },
+          cancelRegister: function() {
+            this.registerForm = {
+              errors: []
+            };
+            this.mode = 0;
+          },
+          logout: function() {
+            var app = this;
+            $.auth.signOut()
+            .then(function(resp) {
+              app.token = '';
+              app.user = {};
+              app.isLogin = false;
+              app.mode = 0;
+            }.bind(this))
+            .fail(function(resp) {
+              app.loginForm.errors = resp.data.errors;
+            }.bind(this));
+          },
+          changeMode: function(mode) {
+            this.mode = mode;
+          },
+          clearForm: function() {
+            this.selected = {};
+            this.mode = 0;
+          },
+          editItem: function(item) {
+            this.selected = item;
+            this.mode = 2;
+          },
+          addArticle: function() {
+              var application = this;
+              var id = (application.mode==1) ? '' : '/'+application.selected.id; 
+              $.ajax({
+                  'type': (application.mode==1) ? 'POST' : 'PUT',
+                  'url': domain + '/articles'+id,
+                  'data': {article: application.selected}
+              }).done(function(data, textStatus, request) {
+                  if (application.mode==1) {
+                    data.comments = [];
+                    data.isExpand = false;
+                    application.list.push(data);
+                  }
+                  application.selected = {
+                      errors: []
+                  };
+                  application.mode = 0;
+              }).fail(function(request, textStatus, errorThrown) {
+                  if (request.status==400) {
+                    application.selected.errors = [];
+                    for (var item in request.responseJSON) {
+                      application.selected.errors = application.selected.errors.concat(
+                        item + ' ' + request.responseJSON[item]
+                      );
+                    }
+                  } else {
+                    alert('Error Grave');
+                  }
+              });
+          },
+          deleteArticle: function(article) {
+            if (confirm('¿Desea eliminar este articulo?')) {
+              var app = this;
+              $.ajax({
+                  'type': 'DELETE',
+                  'url': domain + '/articles/'+article.id
+              }).done(function(data, textStatus, request) {
+                for(let i = 0; i < app.list.length; i++) {
+                  if (app.list[i].id == article.id) {
+                    app.list.splice( i, 1 );
+                  }
+                }
+              }).fail(function(request, textStatus, errorThrown) {
+                alert('error inesperado');
+              });
+            }
+          },
+          addComment: function(article) {
+              var application = this;
+              $.ajax({
+                  'type': 'POST',
+                  'url': domain + '/articles/' + article.id + '/comments',
+                  'data': { comment: {
+                      commenter: this.user.email,
+                      body:this.commentForm.body
+                    }
+                  }
+              }).done(function(data, textStatus, request) {
+                article.comments.push(data);
+                application.commentForm.body = '';
+              }).fail(function(request, textStatus, errorThrown) {
+                  if (request.status==400) {
+                    application.commentForm.errors = [];
+                    for (var item in request.responseJSON) {
+                      application.commentForm.errors = application.commentForm.errors.concat(
+                        item + ' ' + request.responseJSON[item]
+                      );
+                    }
+                  } else {
+                    alert('Error Grave');
+                  }
+              });
+          },
+          deleteComment: function(comment,article) {
+            if (confirm('¿Desea eliminar este comentario?')) {
+              var app = this;
+              $.ajax({
+                  'type': 'DELETE',
+                  'url': domain + '/articles/' + article.id + '/comments/' + comment.id
+              }).done(function(data, textStatus, request) {
+                  for(i = 0; i < article.comments.length; i++) {
+                    if (article.comments[i].id == comment.id) {
+                      article.comments.splice( i, 1 );
+                    }
+                  }
+              }).fail(function(request, textStatus, errorThrown) {
+                  alert('error inesperado');
+              });
+            }
+          },
+          getArticles: function() {
+              application = this; 
+              $.ajax({
+                  'type':'GET',
+                  'url': domain + '/articles',
+              }).done(function(data, textStatus, request) {
+                for (i=0; i<data.length; i++) {
+                  data[i].isExpand = false;
+                }
+                application.list = data;
+              }).fail(function(request, textStatus, errorThrown) {
+                console.log(request);
+              });
+          } 
+        },
+        filters: {}
+      });
+      app.getArticles();
+    </script>
   </body>
 </html>

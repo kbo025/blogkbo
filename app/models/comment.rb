@@ -1,3 +1,5 @@
 class Comment < ApplicationRecord
-  belongs_to :article
+    #include DeviseTokenAuth::Concerns::User
+    belongs_to :article
+    belongs_to :user
 end
